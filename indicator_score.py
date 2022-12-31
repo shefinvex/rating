@@ -130,3 +130,45 @@ def score(row, my_ind, lower_ind_limit, upper_ind_limit, ind_min, ind_max, point
         return round(intercept*point + slope*point*(row[my_ind + '_no_outlier'] - ind_min) / (ind_max - ind_min),2)
 
 # ----------------------------------------------------------------------------------
+
+def indicator_score_value_analysis(items_prepared, ind_list_en, ind_items, ind_points, my_ind, my_field_id, my_orientation_id):
+    
+    ind_items_df = ind_items_func(my_ind, ind_items, items_prepared, my_field_id, my_orientation_id) # generate the indicator-item dataframe for a specific indicator-field-orientation
+    
+    # default input parameters
+    upper_ind_limit = ind_list_en.loc[ind_list_en['ind_title'] == my_ind, 'ind_upper_limit'].values[0] # set upper indicator limit
+    lower_ind_limit = ind_list_en.loc[ind_list_en['ind_title'] == my_ind, 'ind_lower_limit'].values[0] # set lower indicator limit
+    top_score_base = ind_list_en.loc[ind_list_en['ind_title'] == my_ind, 'top_score_base'].values[0] # set top score limit of the indicator_no_outlier
+    bottom_score_base = ind_list_en.loc[ind_list_en['ind_title'] == my_ind, 'bottom_score_base'].values[0] # set bottom score limit of the indicator_no_outlier
+    ind_direction = ind_list_en.loc[ind_list_en.ind_title == my_ind, 'direction'].values[0]
+    intercept = ind_list_en.loc[ind_list_en.ind_title == my_ind, 'intercept'].values[0]
+    slope = ind_list_en.loc[ind_list_en.ind_title == my_ind, 'slope'].values[0]
+    point = ind_points[my_ind]
+    
+    # calculate whiskers
+    upper_whisker, lower_whisker = whisker_func(ind_items_df[my_ind], upper_ind_limit, lower_ind_limit) # calculate upper and lower whiskers
+    
+    # calculate no outliers
+    ind_items_df[my_ind + '_no_outlier'] = ind_items_df.apply(lambda row : no_outlier(row,my_ind,upper_whisker,lower_whisker,upper_ind_limit,lower_ind_limit), axis=1) # generate no_outlier column
+    
+    # calculate indicator no outlier min and max values
+    ind_max = ind_maximum(ind_items_df[my_ind + '_no_outlier'], top_score_base, upper_ind_limit) # calculate indicator max value
+    ind_min = ind_minimum(ind_items_df[my_ind + '_no_outlier'], bottom_score_base, lower_ind_limit) # calculate indicator min value
+    
+    # override parameters
+#     upper_ind_limit = 'not_defined'
+#     lower_ind_limit = 'not_defined'
+#     top_score_base = 'not_defined'
+#     bottom_score_base = 'not_defined'
+#     ind_direction = 'not_defined'
+#     intercept = 'not_defined'
+#     slope = 'not_defined'
+    
+    ind_items_df[my_ind + '_score'] = ind_items_df.apply(lambda row : score(row, my_ind, lower_ind_limit, upper_ind_limit, ind_min, ind_max, point, ind_direction, intercept, slope), axis=1) # generate score column
+    return ind_items_df
+
+def indicator_score_value(ind_items_df, my_ind):
+    
+    ind_items_df['ind_title'] = my_ind # create a column with rows showing the name of the indicator
+    ind_items_df = ind_items_df.rename(columns={my_ind:'value',my_ind + '_score':'score'})[['org_id','field_id','orientation_id','ind_title','value','score']] # rename columns and keep necessary columns
+    return ind_items_df
