@@ -274,8 +274,8 @@ def beneficial_adcost(x):
         return 0
     
 def awards(x):
-    if x.number_national_awards_10years >= 0:
-        return x.number_national_awards_10years
+    if x.number_unique_awards_10years >= 0:
+        return x.number_unique_awards_10years
     else:
         return 0
     
